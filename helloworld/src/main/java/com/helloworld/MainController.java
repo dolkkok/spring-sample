@@ -53,7 +53,7 @@ public class MainController {
     @RequestMapping(value = "/hello", method = RequestMethod.GET)
     @ResponseBody
     public String hello() {
-        return "Hello World";
+        return "Hello World222";
     }
 
     @RequestMapping(value = "/hello.do", method = RequestMethod.GET)

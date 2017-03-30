@@ -8,11 +8,13 @@ class LeakObject {
 
 public class App {
 
-    public static void main( String[] args ) {
+    public static void main( String[] args ) throws Exception {
         List<LeakObject> dataList = new ArrayList<LeakObject>();
 
         while (true) {
             dataList.add(new LeakObject());
+            System.out.println("sleep 1 secs");
+            Thread.sleep(1000);
         }
     }
 }
