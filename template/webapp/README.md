@@ -32,10 +32,31 @@ $ mkdir src\main\resources
 $ mvn package
 ```
 
-# 실행
+
+# Tomcat Stop
 
 ```
-$ mvn exec:java -Dexec.mainClass=com.tmon.App -Dexec.args="arg1 arg2 arg3"
+$ "%CATALINA_HOME%\bin\catalina.bat" stop
 ```
 
+
+# war 배포
+
+```
+$ copy /y target\webapp.war "%CATALINA_HOME%\webapps\"
+```
+
+
+# Tomcat Start
+
+```
+$ "%CATALINA_HOME%\bin\catalina.bat" start
+```
+
+
+# Tomcat Start Debugging Mode
+
+```
+$ "%CATALINA_HOME%\bin\catalina.bat" jpda start
+```
 
