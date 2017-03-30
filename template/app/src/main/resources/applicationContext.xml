@@ -4,6 +4,6 @@
 	http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 	<bean id="helloBean" class="com.tmon.HelloWorld">
-		<property name="name" value="Mkyong" />
+		<property name="name" value="Spring " />
 	</bean>
 </beans>
