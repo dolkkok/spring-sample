@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+        function onShowWaitDialog() {
+            $("#myModal").modal({show:true});
+        }
+
+        function onYes() {
+            window.location.href = "/pages/login.html";
+        }
+
+        function onClose() {
+            window.location.href="/pages/login.html";
+        }
+
+        $(window).load( function() {
+            /// 페이지의 모든 엘리먼트들이 모두 브라우저로 다운되고
+            /// 스크립트가 모든 엘리먼트에 접근가능하게 될 때 발생한다.
+            $("#myModal").modal({show:true});
+        });
+    </script>
+
+</head>
+<body>
+
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog modal-sm">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header bg-primary">
+                <button type="button" class="close" data-dismiss="modal" onclick="onClose()">&times;</button>
+                <h4 class="modal-title">로그인 에러</h4>
+            </div>
+            <div class="modal-body">
+                <p id="modal-body-content">로그인에 실패하였습니다.<br/>다시 로그인하여 주세요.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-dismiss="modal" onClick="onYes()">확인</button>
+            </div>
+        </div>
+        <!-- End Of Modal content -->
+    </div>
+</div>
+
+</body>
+</html>
