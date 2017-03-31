@@ -15,6 +15,28 @@
         <project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <environment>dev</environment>
+                <maven.test.skip>true</maven.test.skip>
+                <deploy.phase>dev</deploy.phase>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>real</id>
+            <properties>
+                <environment>real</environment>
+                <maven.test.skip>true</maven.test.skip>
+                <deploy.phase>real</deploy.phase>
+            </properties>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
@@ -40,5 +62,16 @@
             <version>${spring.version}</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/main/resources-${deploy.phase}</directory>
+            </resource>
+        </resources>
+    </build>
 </project>
 
