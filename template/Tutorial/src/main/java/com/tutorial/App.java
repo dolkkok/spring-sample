@@ -1,5 +1,6 @@
 package com.tutorial;
 
+import com.tutorial.domain.Comment;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -8,6 +9,7 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRespon
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuilder;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.admin.indices.optimize.OptimizeAction;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.exists.ExistsRequest;
@@ -21,7 +23,9 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.collect.ArrayListMultimap;
 import org.elasticsearch.common.collect.HppcMaps;
+import org.elasticsearch.common.lucene.docset.AllDocIdSet;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.*;
@@ -39,9 +43,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
-import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
-import static org.elasticsearch.index.query.QueryBuilders.termQuery;
+import static org.elasticsearch.index.query.QueryBuilders.*;
 
 /// https://www.elastic.co/guide/en/elasticsearch/client/java-api/1.3/query-dsl-filters-caching.html
 
@@ -173,35 +175,38 @@ public class App {
         }
     }
 
-//    public void addNetedMapping(Client client) throws Exception {
-//        XContentBuilder mappingBuilder =
-//            jsonBuilder()
-//                .startObject()
-//                    .startObject(getTypeName())
-//                        .startObject("properties")
-//                            .startObject("lesson")
-//                                .field("type", "nested")
-//                                .startObject("properties")
-//                                    .startObject("place")
-//                                        .field("type", "string")
-//                                    .endObject()
-//                                .endObject()
-//                            .endObject()
-//                        .endObject()
-//                    .endObject()
-//                .endObject();
-//
-//        System.out.println(mappingBuilder.string());
-//
-//        PutMappingRequestBuilder putMappingRequestBuilder = client.admin().indices().preparePutMapping(getIndexName())
-//                .setType(getTypeName()).setSource(mappingBuilder);
-//
-//        PutMappingResponse putMappingResponse = putMappingRequestBuilder.execute().actionGet();
-//
-//        if (putMappingResponse.isAcknowledged() == true) {
-//            System.out.println("Put Mapping : ");
-//        }
-//    }
+    public void addNetedMapping(Client client) throws Exception {
+        XContentBuilder mappingBuilder =
+            jsonBuilder()
+                .startObject()
+                    .startObject(getTypeName())
+                        .startObject("properties")
+                            .startObject("comments")
+                                .field("type", "nested")
+                                .startObject("properties")
+                                    .startObject("name")
+                                        .field("type", "string")
+                                    .endObject()
+                                    .startObject("date")
+                                        .field("type", "string")
+                                    .endObject()
+                                .endObject()
+                            .endObject()
+                        .endObject()
+                    .endObject()
+                .endObject();
+
+        System.out.println(mappingBuilder.string());
+
+        PutMappingRequestBuilder putMappingRequestBuilder = client.admin().indices().preparePutMapping(getIndexName())
+                .setType(getTypeName()).setSource(mappingBuilder);
+
+        PutMappingResponse putMappingResponse = putMappingRequestBuilder.execute().actionGet();
+
+        if (putMappingResponse.isAcknowledged() == true) {
+            System.out.println("Put Mapping : ");
+        }
+    }
 
     /// index 생성 여부 확인
     public boolean existIndex(Client client) {
@@ -226,25 +231,40 @@ public class App {
     }
 
     /// 데이터 입력
-    public void insertDocument(Client client, String docId, String name, String age, String memo, List<String> studio) throws Exception {
-
-        XContentBuilder mappingBuilder =
+    public void insertDocument(Client client, String docId, String name, String age, String memo, List<String> studio, List<Comment> comments) throws Exception, IOException {
+        XContentBuilder builder =
             jsonBuilder()
                 .startObject()
                     .field("name", name)
                     .field("age", age)
                     .field("memo", memo)
                     .field("studio", studio)
+                    .startArray("comments");
+
+                if (comments != null) {
+                    for (Comment c : comments) {
+                        builder
+                            .startObject()
+                                .field("name", c.getName())
+                                .field("date", c.getDate())
+                            .endObject();
+                    }
+                }
+
+                builder
+                    .endArray()
                 .endObject();
 
+        System.out.println(builder.string());
+
+
         IndexRequest indexRequest = new IndexRequest(getIndexName(), getTypeName(), docId);
-        indexRequest.source(mappingBuilder);
+        indexRequest.source(builder);
         IndexResponse r = client.index(indexRequest).actionGet();
 
         if (r.isCreated() == true) {
             System.out.println("Insert Document : " + name);
         }
-
 
         /*
         Map<String, Object> objectHashMap = new HashMap<String, Object>();
@@ -393,7 +413,7 @@ public class App {
         doQuery(builder);
     }
 
-    public  void matchQuery(Client client) {
+    public  void searchMatchQuery(Client client) {
         QueryBuilder qb = QueryBuilders.matchQuery("name", "tomas");
 
         SearchRequestBuilder builder = client.prepareSearch(getIndexName())
@@ -563,29 +583,46 @@ public class App {
         doQuery(builder);
     }
 
-    /*
-    public void searchFilteredQuery(Client client) {
+    /**
+     *
+     * @param client
+     * @apiNote
+     * https://www.elastic.co/guide/en/elasticsearch/client/java-api/1.7/nested.html
+     */
+    public void searchNestedQuery(Client client) {
+
+        QueryBuilder queryBuilder = QueryBuilders.nestedQuery(
+            "comments",
+            QueryBuilders.boolQuery()
+                .must(matchQuery("comments.name", "alice"))
+                .must(rangeQuery("comments.date").gt(2018))
+        ).scoreMode("avg"); /// scoreMode : avg (default), max, total, none
+
+        /*
         FilteredQueryBuilder filteredQueryBuilder =
                 QueryBuilders.filteredQuery(QueryBuilders.termQuery("name", "tomas"),
                                             FilterBuilders.termFilter("name","tomas"));
-
+        */
         SearchRequestBuilder builder = client.prepareSearch(getIndexName())
                 .setTypes(getTypeName())
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(filteredQueryBuilder);
+                .setQuery(queryBuilder);
 
         doQuery(builder);
-    }*/
+    }
 
     public void doQuery(SearchRequestBuilder builder) {
         System.out.println(builder.internalBuilder());
         SearchResponse r = builder.get();
 
         for (SearchHit hit : r.getHits()) {
+            System.out.println(hit.getSourceAsString());
+            /*
             hit.getSource().forEach((key, val) -> {
                 System.out.print(key + " : " + val + ", ");
             });
             System.out.println();
+            */
         }
     }
 
@@ -603,16 +640,21 @@ public class App {
             //app.createIndex(client);
             app.createIndexSettings(client);
             app.addMapping(client);
-            //app.addNetedMapping(client);
+            app.addNetedMapping(client);
             app.existIndex(client);
             app.deleteIndex(client);
 
-            app.insertDocument(client, "1", "Tomas", "10", "Hello Tomas 2017", Arrays.asList("mbc", "sbs", "ebs", "kbs"));
-            app.insertDocument(client, "2", "James", "20", "Hello James 2018", Arrays.asList("mbc", "sbs"));
-            app.insertDocument(client, "3", "Lukas", "30", "Hello Lukas 2019", Arrays.asList("sbs", "ebs", "kbs"));
-            app.insertDocument(client, "4", "Tomas", "40", "Hello Tomas 2020", Arrays.asList("ebs", "kbs"));
-            app.insertDocument(client, "5", "Tomas", "10", "I Am Tomas 2020", Arrays.asList("ebs"));
+            app.insertDocument(client, "1", "Tomas", "10", "Hello Tomas 2017",
+                    Arrays.asList("mbc", "sbs", "ebs", "kbs"),
+                    Arrays.asList(new Comment("Jonh Smith", "2017"), new Comment("Alice White", "2018")));
 
+            app.insertDocument(client, "2", "James", "20", "Hello James 2018",
+                    Arrays.asList("mbc", "sbs"),
+                    Arrays.asList(new Comment("Alice White", "2019")));
+
+            app.insertDocument(client, "3", "Lukas", "30", "Hello Lukas 2019", Arrays.asList("sbs", "ebs", "kbs"), null);
+            app.insertDocument(client, "4", "Tomas", "40", "Hello Tomas 2020", Arrays.asList("ebs", "kbs"), null);
+            app.insertDocument(client, "5", "Tomas", "10", "10I Am Tomas 2020", Arrays.asList("ebs"), null);
             app.deleteDocument(client, "3");
             app.updateDocument(client, "2", "James Dean", "20", "Hello James 2018");
 
@@ -622,7 +664,7 @@ public class App {
 //          app.searchFilteredQuery(client);
             app.searchBoolQuery(client);
             app.searchBoolQuery(client);
-            app.matchQuery(client);
+            app.searchMatchQuery(client);
             app.multiMatchQuery(client);
             app.idsQuery(client);
             app.constantScoreQuery(client);
@@ -635,7 +677,10 @@ public class App {
             app.searchBoolFilter(client);
             app.searchOrFilter(client);
             app.searchQueryFilterCache(client);
+            app.searchNestedQuery(client);
+
             client.close();
+
         } catch (final Exception e) {
             e.printStackTrace();
         } finally {
