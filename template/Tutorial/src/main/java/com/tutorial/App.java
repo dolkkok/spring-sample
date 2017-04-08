@@ -1,9 +1,13 @@
 package com.tutorial;
 
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuilder;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.exists.ExistsRequest;
@@ -17,6 +21,7 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.collect.HppcMaps;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.*;
@@ -25,14 +30,17 @@ import org.elasticsearch.search.SearchHitField;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.context.annotation.*;
+import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.expression.spel.ast.Indexer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
+import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 /// https://www.elastic.co/guide/en/elasticsearch/client/java-api/1.3/query-dsl-filters-caching.html
@@ -68,14 +76,132 @@ public class App {
         return client;
     }
 
+
     /// Index 생성
-    public void createIndex(Client client) {
+    public void createIndex(Client client) throws IOException {
         CreateIndexResponse r = client.admin().indices().prepareCreate(getIndexName()).execute().actionGet();
 
         if (r.isAcknowledged() == true) {
             System.out.println("Create Index : " + getIndexName());
         }
     }
+
+    public void createIndexSettings(Client client) throws IOException {
+        XContentBuilder settingBuilder =
+            jsonBuilder()
+                .startObject()
+                    .startObject("index")
+                        .startObject("analysis")
+                            .startObject("analyzer")
+                                .startObject("low_analyzer")
+                                    .field("type", "custom")
+                                    .array("char_filter", "html_strip")
+                                    .array("filter", "lowercase", "asciifolding")
+                                    .field("tokenizer", "standard")
+                                .endObject()
+                                .startObject("upper_analyzer")
+                                    .field("type", "custom")
+                                    .array("char_filter", "html_strip")
+                                    .array("filter", "uppercase", "asciifolding")
+                                    .field("tokenizer", "standard")
+                                .endObject()
+                            .endObject()
+                        .endObject()
+                    .endObject()
+                .endObject();
+
+        XContentBuilder mappingBuilder =
+            jsonBuilder()
+                .startObject()
+                    .startObject(getTypeName())
+                        .startObject("properties")
+                            .startObject("name")
+                                .field("type", "string")
+                                .field("analyzer", "low_analyzer")
+                            .endObject()
+                            .startObject("age")
+                                .field("type", "string")
+                                .field("index", "not_analyzed")
+                            .endObject()
+                            .startObject("memo")
+                                .field("type", "string")
+                                .field("analyzer", "upper_analyzer")
+                            .endObject()
+                        .endObject()
+                    .endObject()
+                .endObject();
+
+        System.out.println(settingBuilder.string());
+        System.out.println(mappingBuilder.string());
+        final CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(getIndexName());
+
+        createIndexRequestBuilder.setSettings(settingBuilder);
+        createIndexRequestBuilder.addMapping(getTypeName(), mappingBuilder);
+
+        // MAPPING DONE
+        CreateIndexResponse r = createIndexRequestBuilder.execute().actionGet();
+
+        if (r.isAcknowledged() == true) {
+            System.out.println("Create Index : " + getIndexName());
+        }
+    }
+
+    public void addMapping(Client client) throws IOException {
+
+        XContentBuilder mappingBuilder =
+                jsonBuilder()
+                    .startObject()
+                        .startObject(getTypeName())
+                            .startObject("properties")
+                                .startObject("studio")
+                                    .field("type", "string")
+                                    .field("index", "not_analyzed")     /// 입력값이 배열인 경우 반드시 *not_analyzed* 로 매핑되어야 함.
+                                .endObject()
+                            .endObject()
+                        .endObject()
+                    .endObject();
+
+        System.out.println(mappingBuilder.string());
+
+        PutMappingRequestBuilder putMappingRequestBuilder = client.admin().indices().preparePutMapping(getIndexName())
+                .setType(getTypeName()).setSource(mappingBuilder);
+
+        PutMappingResponse putMappingResponse = putMappingRequestBuilder.execute().actionGet();
+
+        if (putMappingResponse.isAcknowledged() == true) {
+            System.out.println("Put Mapping : ");
+        }
+    }
+
+//    public void addNetedMapping(Client client) throws Exception {
+//        XContentBuilder mappingBuilder =
+//            jsonBuilder()
+//                .startObject()
+//                    .startObject(getTypeName())
+//                        .startObject("properties")
+//                            .startObject("lesson")
+//                                .field("type", "nested")
+//                                .startObject("properties")
+//                                    .startObject("place")
+//                                        .field("type", "string")
+//                                    .endObject()
+//                                .endObject()
+//                            .endObject()
+//                        .endObject()
+//                    .endObject()
+//                .endObject();
+//
+//        System.out.println(mappingBuilder.string());
+//
+//        PutMappingRequestBuilder putMappingRequestBuilder = client.admin().indices().preparePutMapping(getIndexName())
+//                .setType(getTypeName()).setSource(mappingBuilder);
+//
+//        PutMappingResponse putMappingResponse = putMappingRequestBuilder.execute().actionGet();
+//
+//        if (putMappingResponse.isAcknowledged() == true) {
+//            System.out.println("Put Mapping : ");
+//        }
+//    }
 
     /// index 생성 여부 확인
     public boolean existIndex(Client client) {
@@ -100,11 +226,37 @@ public class App {
     }
 
     /// 데이터 입력
-    public void insertDocument(Client client, String docId, String name, String age, String memo) {
+    public void insertDocument(Client client, String docId, String name, String age, String memo, List<String> studio) throws Exception {
+
+        XContentBuilder mappingBuilder =
+            jsonBuilder()
+                .startObject()
+                    .field("name", name)
+                    .field("age", age)
+                    .field("memo", memo)
+                    .field("studio", studio)
+                .endObject();
+
+        IndexRequest indexRequest = new IndexRequest(getIndexName(), getTypeName(), docId);
+        indexRequest.source(mappingBuilder);
+        IndexResponse r = client.index(indexRequest).actionGet();
+
+        if (r.isCreated() == true) {
+            System.out.println("Insert Document : " + name);
+        }
+
+
+        /*
         Map<String, Object> objectHashMap = new HashMap<String, Object>();
         objectHashMap.put("name", name);
         objectHashMap.put("age", age);
         objectHashMap.put("memo", memo);
+        objectHashMap.put("city", city);
+
+        Map<String, Object> lessonMap = new HashMap<String, Object>();
+        lessonMap.put("place")
+
+        objectHashMap.put("lesson.place", lesson);
 
         IndexRequest indexRequest = new IndexRequest(getIndexName(), getTypeName(), docId);
         indexRequest.source(objectHashMap);
@@ -113,6 +265,7 @@ public class App {
         if (r.isCreated() == true) {
             System.out.println("Insert Document : " + name);
         }
+        */
     }
 
     /// 데이터 삭제
@@ -227,6 +380,7 @@ public class App {
                 .boolQuery()
                 .must(termQuery("name", "tomas"))
                 .must(termQuery("age", "10"))
+                .must(termQuery("studio", "kbs"))
                 .mustNot(rangeQuery("age").from(30).to(40))
                 .should(termQuery("memo", "hello"))
                 .should(termQuery("memo", "am"));
@@ -447,35 +601,39 @@ public class App {
             Client client = app.createClient();
 
             //app.createIndex(client);
-            //app.existIndex(client);
-            //app.deleteIndex(client);
+            app.createIndexSettings(client);
+            app.addMapping(client);
+            //app.addNetedMapping(client);
+            app.existIndex(client);
+            app.deleteIndex(client);
 
-//            app.insertDocument(client, "1", "Tomas", "10", "Hello Tomas 2017");
-//            app.insertDocument(client, "2", "James", "20", "Hello James 2018");
-//            app.insertDocument(client, "3", "Lukas", "30", "Hello Lukas 2019");
-//            app.insertDocument(client, "4", "Tomas", "40", "Hello Tomas 2020");
-//            app.insertDocument(client, "5", "Tomas", "10", "I Am Tomas 2020");
-//
-//            app.deleteDocument(client, "3");
-//            app.updateDocument(client, "2", "James Dean", "20", "Hello James 2018");
+            app.insertDocument(client, "1", "Tomas", "10", "Hello Tomas 2017", Arrays.asList("mbc", "sbs", "ebs", "kbs"));
+            app.insertDocument(client, "2", "James", "20", "Hello James 2018", Arrays.asList("mbc", "sbs"));
+            app.insertDocument(client, "3", "Lukas", "30", "Hello Lukas 2019", Arrays.asList("sbs", "ebs", "kbs"));
+            app.insertDocument(client, "4", "Tomas", "40", "Hello Tomas 2020", Arrays.asList("ebs", "kbs"));
+            app.insertDocument(client, "5", "Tomas", "10", "I Am Tomas 2020", Arrays.asList("ebs"));
 
-            //app.searchAllDocument(client);
-            //app.searchAllDocumentWithField(client);
-            //app.searchTermQuery(client);
-            //app.searchFilteredQuery(client);
-            //app.searchBoolQuery(client);
-            //app.matchQuery(client);
-            //app.multiMatchQuery(client);
-            //app.idsQuery(client);
-            //app.constantScoreQuery(client);
-            //app.constantScoreQueryFilter(client);
-            //app.prefixQuery(client);
-            //app.searchRangeQuery(client);
-            //app.searchTermsQuery(client);
-            //app.searchWildCardQuery(client);
-            //app.searchAndFilter(client);
-            //app.searchBoolFilter(client);
-            //app.searchOrFilter(client);
+            app.deleteDocument(client, "3");
+            app.updateDocument(client, "2", "James Dean", "20", "Hello James 2018");
+
+            app.searchAllDocument(client);
+            app.searchAllDocumentWithField(client);
+            app.searchTermQuery(client);
+//          app.searchFilteredQuery(client);
+            app.searchBoolQuery(client);
+            app.searchBoolQuery(client);
+            app.matchQuery(client);
+            app.multiMatchQuery(client);
+            app.idsQuery(client);
+            app.constantScoreQuery(client);
+            app.constantScoreQueryFilter(client);
+            app.prefixQuery(client);
+            app.searchRangeQuery(client);
+            app.searchTermsQuery(client);
+            app.searchWildCardQuery(client);
+            app.searchAndFilter(client);
+            app.searchBoolFilter(client);
+            app.searchOrFilter(client);
             app.searchQueryFilterCache(client);
             client.close();
         } catch (final Exception e) {
