@@ -1,12 +1,21 @@
 package com.tutorial.domain;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+@JsonAutoDetect(fieldVisibility = Visibility.NON_PRIVATE)
 public class Comment {
-    public String name;
-    public String date;
+
+    @JsonProperty("name")
+    String name;
+
+    @JsonProperty("date")
+    String date;
 
     public Comment() {
-
     }
 
     public Comment(String name, String date) {

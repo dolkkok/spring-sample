@@ -1,6 +1,8 @@
 package com.tutorial;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tutorial.domain.Comment;
+import com.tutorial.domain.Student;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -33,12 +35,14 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.expression.spel.ast.Indexer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.*;
 
@@ -50,6 +54,9 @@ import static org.elasticsearch.index.query.QueryBuilders.*;
 @Configuration
 @ComponentScan({"com.tmon"})
 public class App {
+
+    @Autowired
+    public Client client;
 
     public String getIndexName() {
         return "test";
@@ -64,7 +71,8 @@ public class App {
         return new App();
     }
 
-    public Client createClient() {
+    @Bean
+    public Client client() {
 
         /// easticsearch가 한대인 경우
         Client client = new TransportClient()
@@ -78,9 +86,16 @@ public class App {
         return client;
     }
 
+    @PreDestroy
+    public void onDestroy() {
+        if (client != null) {
+            client.close();
+            client = null;
+        }
+    }
 
     /// Index 생성
-    public void createIndex(Client client) throws IOException {
+    public void createIndex() throws IOException {
         CreateIndexResponse r = client.admin().indices().prepareCreate(getIndexName()).execute().actionGet();
 
         if (r.isAcknowledged() == true) {
@@ -88,7 +103,7 @@ public class App {
         }
     }
 
-    public void createIndexSettings(Client client) throws IOException {
+    public void createIndexSettings() throws IOException {
         XContentBuilder settingBuilder =
             jsonBuilder()
                 .startObject()
@@ -148,7 +163,7 @@ public class App {
         }
     }
 
-    public void addMapping(Client client) throws IOException {
+    public void addMapping() throws IOException {
 
         XContentBuilder mappingBuilder =
                 jsonBuilder()
@@ -175,7 +190,7 @@ public class App {
         }
     }
 
-    public void addNetedMapping(Client client) throws Exception {
+    public void addNestedMapping() throws Exception {
         XContentBuilder mappingBuilder =
             jsonBuilder()
                 .startObject()
@@ -209,7 +224,7 @@ public class App {
     }
 
     /// index 생성 여부 확인
-    public boolean existIndex(Client client) {
+    public boolean existIndex() {
 
         IndicesExistsResponse r = client.admin().indices().prepareExists(getIndexName()).execute().actionGet();
 
@@ -222,7 +237,7 @@ public class App {
     }
 
     /// index 삭제
-    public void deleteIndex(Client client) {
+    public void deleteIndex() {
         DeleteIndexResponse r = client.admin().indices().prepareDelete(getIndexName()).execute().actionGet();
 
         if (r.isAcknowledged() == true) {
@@ -231,7 +246,8 @@ public class App {
     }
 
     /// 데이터 입력
-    public void insertDocument(Client client, String docId, String name, String age, String memo, List<String> studio, List<Comment> comments) throws Exception, IOException {
+    /// https://www.elastic.co/guide/en/elasticsearch/client/java-api/1.6/generate.html
+    public void insertDocument(String docId, String name, String age, String memo, List<String> studio, List<Comment> comments) throws Exception, IOException {
         XContentBuilder builder =
             jsonBuilder()
                 .startObject()
@@ -288,8 +304,23 @@ public class App {
         */
     }
 
+    /// https://www.elastic.co/guide/en/elasticsearch/client/java-api/1.6/generate.html
+    public void InsertDocumentObject(Student student) throws Exception {
+
+        IndexRequest indexRequest = new IndexRequest(getIndexName(), getTypeName(), student.getDocId());
+
+        ObjectMapper om = new ObjectMapper();
+        byte []json = om.writeValueAsBytes(student);
+        indexRequest.source(json);
+        IndexResponse r = client.index(indexRequest).actionGet();
+
+        if (r.isCreated() == true) {
+            System.out.println("Insert Document : " + student.getName());
+        }
+    }
+
     /// 데이터 삭제
-    public void deleteDocument(Client client, String docId) {
+    public void deleteDocument(String docId) {
         DeleteRequest deleteRequest = new DeleteRequest(getIndexName(), getTypeName(), docId);
         DeleteResponse r = client.delete(deleteRequest).actionGet();
 
@@ -299,7 +330,7 @@ public class App {
     }
 
     /// 데이터 갱신
-    public void updateDocument(Client client, String docId, String name, String age, String memo) {
+    public void updateDocument(String docId, String name, String age, String memo) {
 
         UpdateRequest updateRequest = new UpdateRequest(getIndexName(), getTypeName(), docId);
 
@@ -318,7 +349,7 @@ public class App {
     }
 
     /// 데이터 조회
-    public void searchAllDocument(Client client) {
+    public void searchAllDocument() {
 
         SearchRequestBuilder builder = client.prepareSearch()
                 .setIndices(getIndexName())
@@ -349,7 +380,7 @@ public class App {
         }
     }
 
-    public void searchAllDocumentWithField(Client client) {
+    public void searchAllDocumentWithField() {
 
         SearchRequestBuilder builder = client.prepareSearch()
                 .setIndices(getIndexName())
@@ -379,7 +410,7 @@ public class App {
         }
     }
 
-    public void searchTermQuery(Client client) {
+    public void searchTermQuery() {
 
         SearchRequestBuilder builder = client.prepareSearch(getIndexName())
                 .setTypes(getTypeName())
@@ -392,7 +423,7 @@ public class App {
     }
 
 
-    public void searchBoolQuery(Client client) {
+    public void searchBoolQuery() {
         /// 반드시 포함 : name = tomas, age = 10
         /// 반드시 불포함 : age < 30 and age > 40
         /// OR 조건 : memo = 'hello' or memo = 'am'
@@ -413,7 +444,7 @@ public class App {
         doQuery(builder);
     }
 
-    public  void searchMatchQuery(Client client) {
+    public  void searchMatchQuery() {
         QueryBuilder qb = QueryBuilders.matchQuery("name", "tomas");
 
         SearchRequestBuilder builder = client.prepareSearch(getIndexName())
@@ -424,7 +455,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void multiMatchQuery(Client client) {
+    public void multiMatchQuery() {
         QueryBuilder qb = QueryBuilders.multiMatchQuery(
                 "hello tomas",     // Text you are looking for
                 "name", "memo"           // Fields you query on
@@ -438,7 +469,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void idsQuery(Client client) {
+    public void idsQuery() {
         QueryBuilder qb = QueryBuilders.idsQuery().ids("1", "2", "4");
         SearchRequestBuilder builder = client.prepareSearch(getIndexName())
                 .setTypes(getTypeName())
@@ -450,7 +481,34 @@ public class App {
         doQuery(builder);
     }
 
-    public void constantScoreQuery(Client client) {
+    public void searchIdsQuery() throws  Exception {
+        QueryBuilder qb = QueryBuilders.idsQuery().ids("6");
+        SearchRequestBuilder builder = client.prepareSearch(getIndexName())
+                .setTypes(getTypeName())
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(qb)
+                .addSort("age", SortOrder.ASC);
+
+        System.out.println(builder.internalBuilder());
+        SearchResponse r = builder.get();
+        ObjectMapper om = new ObjectMapper();
+
+        for (SearchHit hit : r.getHits()) {
+            System.out.println(hit.getSourceAsString());
+            String sJson = hit.getSourceAsString();
+            Student student = om.readValue(sJson, Student.class);
+
+            System.out.println("name : " + student.getName());
+            /*
+            hit.getSource().forEach((key, val) -> {
+                System.out.print(key + " : " + val + ", ");
+            });
+            System.out.println();
+            */
+        }
+    }
+
+    public void constantScoreQuery() {
         /// With Queries
         QueryBuilder qb = QueryBuilders.constantScoreQuery(QueryBuilders.termQuery("name","james"))
                 .boost(2.0f);
@@ -463,7 +521,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void constantScoreQueryFilter(Client client) {
+    public void constantScoreQueryFilter() {
         /// Using with Filters
         QueryBuilder qb = QueryBuilders.constantScoreQuery(FilterBuilders.termFilter("name", "tomas"))
                 .boost(2.0f);
@@ -476,7 +534,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void prefixQuery(Client client) {
+    public void prefixQuery() {
         QueryBuilder qb = QueryBuilders.prefixQuery("name", "tom");
         SearchRequestBuilder builder = client.prepareSearch(getIndexName())
                 .setTypes(getTypeName())
@@ -486,7 +544,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void searchRangeQuery(Client client) {
+    public void searchRangeQuery() {
         QueryBuilder qb = QueryBuilders
                         .rangeQuery("age")
                         .from(10)
@@ -502,7 +560,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void searchTermsQuery(Client client) {
+    public void searchTermsQuery() {
         QueryBuilder qb = QueryBuilders.termsQuery("memo",    // field
                                 "hello", "am")               // values
                                 .minimumMatch(1);              // How many terms must match
@@ -515,7 +573,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void searchWildCardQuery(Client client) {
+    public void searchWildCardQuery() {
         QueryBuilder qb = QueryBuilders.wildcardQuery("name", "t?ma*");
 
         SearchRequestBuilder builder = client.prepareSearch(getIndexName())
@@ -526,7 +584,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void searchAndFilter(Client client) {
+    public void searchAndFilter() {
         FilterBuilder fb = FilterBuilders.andFilter(
                 FilterBuilders.rangeFilter("age").from("10").to("30"),
                 FilterBuilders.prefixFilter("name", "tom")
@@ -540,7 +598,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void searchBoolFilter(Client client) {
+    public void searchBoolFilter() {
         FilterBuilder fb = FilterBuilders.boolFilter()
                 .must(FilterBuilders.termFilter("name", "tomas"))
                 .mustNot(FilterBuilders.rangeFilter("age").from("40").to("100"))
@@ -555,7 +613,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void searchOrFilter(Client client) {
+    public void searchOrFilter() {
         FilterBuilder fb = FilterBuilders.orFilter(
                 FilterBuilders.termFilter("name", "tomas"),
                 FilterBuilders.termFilter("name", "james")
@@ -569,7 +627,7 @@ public class App {
         doQuery(builder);
     }
 
-    public void searchQueryFilterCache(Client client) {
+    public void searchQueryFilterCache() {
         FilterBuilder fb = FilterBuilders.andFilter(
                     FilterBuilders.rangeFilter("age").from("10").to("20"),
                     FilterBuilders.prefixFilter("name", "tom")
@@ -584,12 +642,9 @@ public class App {
     }
 
     /**
-     *
-     * @param client
-     * @apiNote
      * https://www.elastic.co/guide/en/elasticsearch/client/java-api/1.7/nested.html
      */
-    public void searchNestedQuery(Client client) {
+    public void searchNestedQuery() {
 
         QueryBuilder queryBuilder = QueryBuilders.nestedQuery(
             "comments",
@@ -598,15 +653,24 @@ public class App {
                 .must(rangeQuery("comments.date").gt(2018))
         ).scoreMode("avg"); /// scoreMode : avg (default), max, total, none
 
-        /*
-        FilteredQueryBuilder filteredQueryBuilder =
-                QueryBuilders.filteredQuery(QueryBuilders.termQuery("name", "tomas"),
-                                            FilterBuilders.termFilter("name","tomas"));
-        */
         SearchRequestBuilder builder = client.prepareSearch(getIndexName())
                 .setTypes(getTypeName())
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
                 .setQuery(queryBuilder);
+
+        doQuery(builder);
+    }
+
+    public void searchFilteredQuery() {
+
+        FilteredQueryBuilder filteredQueryBuilder =
+                QueryBuilders.filteredQuery(QueryBuilders.termQuery("name", "tomas"),
+                                            FilterBuilders.termFilter("age","10"));
+
+        SearchRequestBuilder builder = client.prepareSearch(getIndexName())
+                .setTypes(getTypeName())
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(filteredQueryBuilder);
 
         doQuery(builder);
     }
@@ -626,8 +690,6 @@ public class App {
         }
     }
 
-
-
     public static void main( String[] args ) {
 
         AnnotationConfigApplicationContext context = null;
@@ -635,51 +697,56 @@ public class App {
         try {
             context = new AnnotationConfigApplicationContext(App.class);
             App app = context.getBean(App.class);
-            Client client = app.createClient();
 
-            //app.createIndex(client);
-            app.createIndexSettings(client);
-            app.addMapping(client);
-            app.addNetedMapping(client);
-            app.existIndex(client);
-            app.deleteIndex(client);
+            //app.createIndex();
+            app.createIndexSettings();
+            app.addMapping();
+            app.addNestedMapping();
+            app.existIndex();
+            app.deleteIndex();
 
-            app.insertDocument(client, "1", "Tomas", "10", "Hello Tomas 2017",
+            app.insertDocument("1", "Tomas", "10", "Hello Tomas 2017",
                     Arrays.asList("mbc", "sbs", "ebs", "kbs"),
                     Arrays.asList(new Comment("Jonh Smith", "2017"), new Comment("Alice White", "2018")));
 
-            app.insertDocument(client, "2", "James", "20", "Hello James 2018",
+            app.insertDocument("2", "James", "20", "Hello James 2018",
                     Arrays.asList("mbc", "sbs"),
                     Arrays.asList(new Comment("Alice White", "2019")));
 
-            app.insertDocument(client, "3", "Lukas", "30", "Hello Lukas 2019", Arrays.asList("sbs", "ebs", "kbs"), null);
-            app.insertDocument(client, "4", "Tomas", "40", "Hello Tomas 2020", Arrays.asList("ebs", "kbs"), null);
-            app.insertDocument(client, "5", "Tomas", "10", "10I Am Tomas 2020", Arrays.asList("ebs"), null);
-            app.deleteDocument(client, "3");
-            app.updateDocument(client, "2", "James Dean", "20", "Hello James 2018");
+            app.insertDocument("3", "Lukas", "30", "Hello Lukas 2019", Arrays.asList("sbs", "ebs", "kbs"), null);
+            app.insertDocument("4", "Tomas", "40", "Hello Tomas 2020", Arrays.asList("ebs", "kbs"), null);
+            app.insertDocument("5", "Tomas", "10", "10I Am Tomas 2020", Arrays.asList("ebs"), null);
 
-            app.searchAllDocument(client);
-            app.searchAllDocumentWithField(client);
-            app.searchTermQuery(client);
-//          app.searchFilteredQuery(client);
-            app.searchBoolQuery(client);
-            app.searchBoolQuery(client);
-            app.searchMatchQuery(client);
-            app.multiMatchQuery(client);
-            app.idsQuery(client);
-            app.constantScoreQuery(client);
-            app.constantScoreQueryFilter(client);
-            app.prefixQuery(client);
-            app.searchRangeQuery(client);
-            app.searchTermsQuery(client);
-            app.searchWildCardQuery(client);
-            app.searchAndFilter(client);
-            app.searchBoolFilter(client);
-            app.searchOrFilter(client);
-            app.searchQueryFilterCache(client);
-            app.searchNestedQuery(client);
+            Student student = new Student("6", "Suzi", "25", "Hello Suzi 2017",
+                    Arrays.asList("mbc", "sbs", "ebs", "kbs", "jtbc"),
+                    Arrays.asList(new Comment("Mina Jung", "2017"), new Comment("Semi Lee", "2018")));
 
-            client.close();
+            app.InsertDocumentObject(student);
+            app.deleteDocument("3");
+            app.updateDocument("2", "James Dean", "20", "Hello James 2018");
+
+            app.searchAllDocument();
+            app.searchAllDocumentWithField();
+            app.searchTermQuery();
+            app.searchFilteredQuery();
+            app.searchBoolQuery();
+            app.searchBoolQuery();
+            app.searchMatchQuery();
+            app.multiMatchQuery();
+            app.idsQuery();
+            app.searchIdsQuery();
+            app.constantScoreQuery();
+            app.constantScoreQueryFilter();
+            app.prefixQuery();
+            app.searchRangeQuery();
+            app.searchTermsQuery();
+            app.searchWildCardQuery();
+            app.searchAndFilter();
+            app.searchBoolFilter();
+            app.searchOrFilter();
+            app.searchQueryFilterCache();
+            app.searchNestedQuery();
+            app.searchFilteredQuery();
 
         } catch (final Exception e) {
             e.printStackTrace();
