@@ -48,6 +48,7 @@ import java.util.*;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.*;
+import org.apache.log4j.Logger;
 
 /// https://www.elastic.co/guide/en/elasticsearch/client/java-api/1.3/query-dsl-filters-caching.html
 
@@ -58,6 +59,9 @@ public class App {
     @Autowired
     public Client client;
 
+    protected static Logger logger = Logger.getLogger(App.class);
+
+
     public String getIndexName() {
         return "test";
     }
@@ -66,10 +70,12 @@ public class App {
         return "data";
     }
 
+    /*
     @Bean
     App app() {
         return new App();
     }
+    */
 
     @Bean
     public Client client() {
@@ -455,6 +461,17 @@ public class App {
         doQuery(builder);
     }
 
+    public void searchRegexQuery() {
+        QueryBuilder qb = QueryBuilders.regexpQuery("name", "tomas");
+
+        SearchRequestBuilder builder = client.prepareSearch(getIndexName())
+                .setTypes(getTypeName())
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(qb);
+
+        doQuery(builder);
+    }
+
     public void multiMatchQuery() {
         QueryBuilder qb = QueryBuilders.multiMatchQuery(
                 "hello tomas",     // Text you are looking for
@@ -661,7 +678,26 @@ public class App {
         doQuery(builder);
     }
 
-    public void searchFilteredQuery() {
+
+    public void searchFilteredMatchQueryTermFilter() {
+
+        FilteredQueryBuilder filteredQueryBuilder =
+                QueryBuilders.filteredQuery(QueryBuilders.regexpQuery("name", "tomas"),
+                        FilterBuilders.termFilter("age","10"));
+
+        SearchRequestBuilder builder = client.prepareSearch(getIndexName())
+                .setTypes(getTypeName())
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(filteredQueryBuilder);
+
+        doQuery(builder);
+
+
+    }
+
+
+
+    public void searchFilteredTermQueryTermFilter() {
 
         FilteredQueryBuilder filteredQueryBuilder =
                 QueryBuilders.filteredQuery(QueryBuilders.termQuery("name", "tomas"),
@@ -673,6 +709,8 @@ public class App {
                 .setQuery(filteredQueryBuilder);
 
         doQuery(builder);
+
+
     }
 
     public void doQuery(SearchRequestBuilder builder) {
@@ -698,13 +736,17 @@ public class App {
             context = new AnnotationConfigApplicationContext(App.class);
             App app = context.getBean(App.class);
 
-            //app.createIndex();
-            app.createIndexSettings();
-            app.addMapping();
-            app.addNestedMapping();
-            app.existIndex();
-            app.deleteIndex();
+            logger.info("hello world");
 
+
+            //app.createIndex();
+//            app.createIndexSettings();
+//            app.addMapping();
+//            app.addNestedMapping();
+//            app.existIndex();
+//            app.deleteIndex();
+
+/*
             app.insertDocument("1", "Tomas", "10", "Hello Tomas 2017",
                     Arrays.asList("mbc", "sbs", "ebs", "kbs"),
                     Arrays.asList(new Comment("Jonh Smith", "2017"), new Comment("Alice White", "2018")));
@@ -722,6 +764,8 @@ public class App {
                     Arrays.asList(new Comment("Mina Jung", "2017"), new Comment("Semi Lee", "2018")));
 
             app.InsertDocumentObject(student);
+            */
+            /*
             app.deleteDocument("3");
             app.updateDocument("2", "James Dean", "20", "Hello James 2018");
 
@@ -747,7 +791,10 @@ public class App {
             app.searchQueryFilterCache();
             app.searchNestedQuery();
             app.searchFilteredQuery();
+            */
 
+            //app.searchFilteredMatchQueryTermFilter();
+            app.searchRegexQuery();
         } catch (final Exception e) {
             e.printStackTrace();
         } finally {
