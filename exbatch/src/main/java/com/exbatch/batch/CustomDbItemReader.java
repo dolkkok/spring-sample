@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import java.util.List;
 import java.util.Properties;
 
+import static java.lang.Long.max;
+
 public class CustomDbItemReader implements ItemReader<List<User>> {
 
     @Autowired
@@ -33,7 +35,19 @@ public class CustomDbItemReader implements ItemReader<List<User>> {
 
         //List<User> users = dao.getPagingUserList(offset, 2);
         List<User> users = dao.getQuickPagingUserList(offset, 2);
-        batchProperties.setProperty("batch_offset", new Long(offset + users.size()).toString());
+
+        if (users.isEmpty() == true) {
+            return null;
+        }
+
+        long maxUserNo = 0;
+        maxUserNo = users.stream()
+                .mapToLong(user -> {
+                    return user.getUserNo();
+                }).max().getAsLong();
+
+        String lastOffset =  Long.toString(maxUserNo);
+        batchProperties.setProperty("batch_offset", lastOffset);
 
         if (users.size() > 0) {
             logger.info("read item : " + users);

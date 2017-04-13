@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -82,9 +83,29 @@ public class App {
 
         //dao.insertBatch2();
         //dao.updateBatch2();
-        dao.insertBatch2();
+        //dao.insertBatch2();
     }
 
+    public void runBulkInsert() {
+        List<User> users = new ArrayList<>();
+
+        users.add(new User("ebs", "ebs", "ebs@google.co.kr", "GUEST"));
+        users.add(new User("kbs", "kbs", "kbs@google.co.kr", "GUEST"));
+        users.add(new User("sbs", "sbs", "sbs@google.co.kr", "GUEST"));
+        users.add(new User("jtbc", "jtbc 손석희", "jtbc@google.co.kr", "GUEST"));
+
+        dao.bulkInsert(users);
+    }
+
+    public void runBulkUpdate() {
+        List<String> list = new ArrayList<>();
+
+        list.add("mbc");
+        list.add("sbs");
+        list.add("kbs");
+
+        dao.bulkUpdate(list);
+    }
 
     public void runDBService() throws Exception {
         myService.saveAdmins();
@@ -100,8 +121,8 @@ public class App {
             App app = context.getBean(App.class);
             //app.runDAO();
             //app.runDBService();
-            //app.runBatch();
-            app.runTest();
+            app.runBatch();
+            //app.runTest();
 
         } catch (final Exception e) {
             e.printStackTrace();

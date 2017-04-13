@@ -1,6 +1,15 @@
 
 # 예제를 실행하기 위해서 필요한 쿼리
 ```sql
+CREATE DATABASE db_test
+DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+show variables like 'c%';
+
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS users2;
+DROP TABLE IF EXISTS batch_offset;
+
 CREATE TABLE `batch_offset` (
 	`batch_name` VARCHAR(20) NOT NULL,
 	`batch_offset` BIGINT(20) NULL DEFAULT 0,
@@ -49,4 +58,19 @@ INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES (
 SELECT * FROM users;
 SELECT * FROM users2;
 SELECT * FROM batch_offset;
+```
+# mysqld 설정
+```ini
+[mysql]
+no-auto-rehash
+default-character-set=utf8
+
+[mysqld]
+init_connect=SET collation_connection = utf8_general_ci
+init_connect=SET NAMES utf8
+character-set-server=utf8
+port=3306
+explicit_defaults_for_timestamp = TRUE
+general_log_file = C:\wamp\logs\mysql.log
+general_log      = 1
 ```

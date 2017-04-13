@@ -95,36 +95,21 @@ public class MyDAO {
 		sqlSessionTemplate.insert("database.saveAdmin", param);
 	}
 
-	public void insertBatch2() {
-
+	public void insertEucKr() {
 		List<User> list = new ArrayList<>();
-
 		list.add(new User("jtbc", "jtbc 손석희", "jtbc@google.co.kr", "GUEST"));
-		/*
-		list.add(new User("ebs", "ebs", "ebs@google.co.kr", "GUEST"));
-		list.add(new User("kbs", "kbs", "kbs@google.co.kr", "GUEST"));
-		list.add(new User("sbs", "sbs", "sbs@google.co.kr", "GUEST"));
-		*/
-
 		Map<String, Object> param = new HashMap<>();
 		param.put("list", list);
-
-		sqlSessionTemplate.insert("database.insertBatch2", param);
+		sqlSessionTemplate.insert("database.bulkInsert", param);
 	}
 
 	public void bulkInsert(List<User> users) {
 		Map<String, Object> param = new HashMap<>();
 		param.put("list", users);
-
 		sqlSessionTemplate.insert("database.bulkInsert", param);
 	}
 
-	public void updateBatch2() {
-		List<String> list = new ArrayList<>();
-
-		list.add("mbc");
-		list.add("sbs");
-		list.add("kbs");
-		sqlSessionTemplate.update("database.updateBatch2", list);
+	public void bulkUpdate(List<String> list) {
+		sqlSessionTemplate.update("database.bulkUpdate", list);
 	}
 }

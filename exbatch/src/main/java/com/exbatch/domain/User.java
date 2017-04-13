@@ -1,6 +1,7 @@
 package com.exbatch.domain;
 
 public class User {
+	long user_no;		/// primary key only
 	String user_email;
 	String user_name;
 	String user_type;
@@ -11,6 +12,7 @@ public class User {
 	}
 
 	public User(String id, String name, String email, String type) {
+		this.user_no = 0;
 		this.user_id = id;
 		this.user_name = name;
 		this.user_email = email;
@@ -47,6 +49,14 @@ public class User {
 
 	public String getUserType() {
 		return this.user_type;
+	}
+
+	public void setUserNo(long user_no) {
+		this.user_no = user_no;
+	}
+
+	public long getUserNo() {
+		return this.user_no;
 	}
 
 	@Override
