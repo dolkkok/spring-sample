@@ -49,6 +49,15 @@ public class MyDAO {
 		return sqlSessionTemplate.selectList("database.getPagingUserList", param);
 	}
 
+	public List<User> getQuickPagingUserList(long offset, long noOfRecords) throws SQLException {
+		Map<String, Long> param = new HashMap<String, Long>();
+
+		param.put("offset", new Long(offset));
+		param.put("noOfRecords", new Long(noOfRecords));
+
+		return sqlSessionTemplate.selectList("database.getQuickPagingUserList", param);
+	}
+
 	public List<String> getAdminUserNameList() throws SQLException {
 
 		Map<String, String> param = new HashMap<String, String>();
@@ -90,15 +99,24 @@ public class MyDAO {
 
 		List<User> list = new ArrayList<>();
 
-		list.add(new User("mbc", "mbc", "mbc@google.co.kr", "GUEST"));
+		list.add(new User("jtbc", "jtbc 손석희", "jtbc@google.co.kr", "GUEST"));
+		/*
 		list.add(new User("ebs", "ebs", "ebs@google.co.kr", "GUEST"));
 		list.add(new User("kbs", "kbs", "kbs@google.co.kr", "GUEST"));
 		list.add(new User("sbs", "sbs", "sbs@google.co.kr", "GUEST"));
+		*/
 
 		Map<String, Object> param = new HashMap<>();
 		param.put("list", list);
 
 		sqlSessionTemplate.insert("database.insertBatch2", param);
+	}
+
+	public void bulkInsert(List<User> users) {
+		Map<String, Object> param = new HashMap<>();
+		param.put("list", users);
+
+		sqlSessionTemplate.insert("database.bulkInsert", param);
 	}
 
 	public void updateBatch2() {

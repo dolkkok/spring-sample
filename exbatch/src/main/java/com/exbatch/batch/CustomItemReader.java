@@ -3,15 +3,18 @@ package com.exbatch.batch;
 import java.util.List;
 
 import com.exbatch.domain.User;
+import com.exbatch.repository.StringDB;
 import org.apache.log4j.Logger;
 import org.apache.log4j.varia.StringMatchFilter;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class CustomItemReader implements ItemReader<String> {
 
-    private List<String> alphabetRepository;
+    @Autowired
+    StringDB alphabetRepository;
     private int count = 0;
 
     Logger logger = Logger.getLogger(CustomItemReader.class);
@@ -31,13 +34,4 @@ public class CustomItemReader implements ItemReader<String> {
             return null;
         }
     }
-    public List<String> getAlphabetRepository() {
-        return alphabetRepository;
-    }
-
-    public void setAlphabetRepository(List<String> _alphabetRepository) {
-        this.alphabetRepository = _alphabetRepository;
-    }
-
-
 }

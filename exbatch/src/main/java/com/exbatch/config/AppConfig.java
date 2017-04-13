@@ -1,8 +1,6 @@
 package com.exbatch.config;
 
-import com.exbatch.batch.CustomItemProcessor;
-import com.exbatch.batch.CustomItemReader;
-import com.exbatch.batch.CustomItemWriter;
+import com.exbatch.batch.*;
 import com.exbatch.domain.User;
 import com.exbatch.repository.StringDB;
 import org.apache.commons.dbcp.BasicDataSource;
@@ -27,6 +25,7 @@ import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.convert.Property;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -34,6 +33,7 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.util.List;
+import java.util.Properties;
 
 @Configuration
 @Import({DBConfig.class})
@@ -93,9 +93,10 @@ public class AppConfig {
 		BasicDataSource dataSource = new BasicDataSource();
 
 		dataSource.setDriverClassName("com.mysql.jdbc.Driver");
-		dataSource.setUrl("jdbc:mysql://127.0.0.1:3306/test?useUnicode=true&amp;characterEncoding=utf8");
+		dataSource.setUrl("jdbc:mysql://127.0.0.1:3306/test?useUnicode=yes&amp;characterEncoding=UTF-8");
 		dataSource.setUsername("root");
 		dataSource.setPassword("");
+
 		return dataSource;
 	}
 
@@ -135,35 +136,60 @@ public class AppConfig {
 	}
 
 
+	@Bean
+	CustomItemReader customItemReader() {
+		return new CustomItemReader();
+	}
+
+	@Bean
+	CustomItemWriter customItemWriter() {
+		return new CustomItemWriter();
+	}
+
+	@Bean
+	CustomItemProcessor customItemProcessor() {
+		return new CustomItemProcessor();
+	}
+
+	@Bean(name = "batchProperties", autowire = Autowire.BY_NAME)
+	Properties batchProperties() {
+		Properties properties = new Properties();
+		properties.put("batch_name", "mybatch");
+		return properties;
+	}
 
 	@Bean
 	protected Step step1() throws Exception {
-		CustomItemReader cr = new CustomItemReader();
-		cr.setAlphabetRepository(alphabetRepository);
-		CustomItemProcessor processor = new CustomItemProcessor();
-		CustomItemWriter writer = new CustomItemWriter();
-
 		return this.steps.get("#ExChunkBatch-step1").<String, String>chunk(3)
-				.reader(cr)             ///
-				.processor(processor)   ///
-				.writer(writer)         ///
+				.reader(customItemReader())             ///
+				.processor(customItemProcessor())   ///
+				.writer(customItemWriter())         ///
 				.build();
 	}
 
 
+	@Bean
+	CustomDbItemReader customDbItemReader() {
+		return new CustomDbItemReader();
+	}
 
+	@Bean
+	CustomDbItemProcessor customDbItemProcessor() {
+		return new CustomDbItemProcessor();
+	}
+
+	@Bean
+	CustomDbItemWriter customDbItemWriter() {
+		return new CustomDbItemWriter();
+	}
 
 	@Bean
 	protected Step dbStep() throws Exception {
-		CustomItemReader cr = new CustomItemReader();
-		cr.setAlphabetRepository(alphabetRepository);
-		CustomItemProcessor processor = new CustomItemProcessor();
-		CustomItemWriter writer = new CustomItemWriter();
 
-		return this.steps.get("#ExDbBatch-dbStep").<String, String>chunk(3)
-				.reader(cr)             ///
-				.processor(processor)   ///
-				.writer(writer)         ///
+		return this.steps.get("#ExDbBatch-dbStep").<List<User>, List<User>>chunk(1)
+				.reader(customDbItemReader())             ///
+				.processor(customDbItemProcessor())   ///
+				.writer(customDbItemWriter())         ///
 				.build();
 	}
 

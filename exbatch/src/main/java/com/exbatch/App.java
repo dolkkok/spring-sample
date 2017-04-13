@@ -38,11 +38,14 @@ public class App {
     static Logger logger = Logger.getLogger(App.class);
 
     public void runBatch() throws Exception {
+
         /*
         JobExecution jobExecution = simpleJobLauncher.run(sampleJob, new JobParameters());
         BatchStatus batchStatus = jobExecution.getStatus();
         logger.info(batchStatus);
         */
+
+
         JobExecution jobExecution = simpleJobLauncher.run(sampleDbJob, new JobParameters());
         BatchStatus batchStatus = jobExecution.getStatus();
         logger.info(batchStatus);
@@ -79,8 +82,9 @@ public class App {
 
         //dao.insertBatch2();
         //dao.updateBatch2();
-
+        dao.insertBatch2();
     }
+
 
     public void runDBService() throws Exception {
         myService.saveAdmins();
@@ -96,8 +100,8 @@ public class App {
             App app = context.getBean(App.class);
             //app.runDAO();
             //app.runDBService();
-            app.runBatch();
-            //app.runTest();
+            //app.runBatch();
+            app.runTest();
 
         } catch (final Exception e) {
             e.printStackTrace();
