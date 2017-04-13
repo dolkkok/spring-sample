@@ -1,4 +1,5 @@
 
+# ì˜ˆì œë¥¼ ì‹¤í–‰í•˜ê¸° ìœ„í•´ì„œ í•„ìš”í•œ ì¿¼ë¦¬
 ```sql
 CREATE TABLE `batch_offset` (
 	`batch_name` VARCHAR(20) NOT NULL,
@@ -35,15 +36,15 @@ CREATE TABLE `users2` (
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB;
 
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('dba', 'DB °ü¸®ÀÚ', 'dba@gmail.com', 'ADMIN');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('dba', 'DB ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½', 'dba@gmail.com', 'ADMIN');
 INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('ebs', 'ebs', 'ebs@google.co.kr', 'GUEST');
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('james', 'Á¦ÀÓ½º', 'james@gmail.com', 'GUEST');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('james', 'ï¿½ï¿½ï¿½Ó½ï¿½', 'james@gmail.com', 'GUEST');
 INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('KBS', 'kbs', 'kbs@google.co.kr', 'GUEST');
 INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('MBC', 'mbc', 'mbc@google.co.kr', 'GUEST');
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('root', 'root °ü¸®ÀÚ', 'root@gmail.com', 'ADMIN');
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('sa', '¼öÆÛ °ü¸®ÀÚ', 'sa@gmail.com', 'SA');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('root', 'root ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½', 'root@gmail.com', 'ADMIN');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('sa', 'ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½', 'sa@gmail.com', 'SA');
 INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('SBS', 'sbs', 'sbs@google.co.kr', 'GUEST');
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('sys', '½Ã½ºÅÛ °ü¸®ÀÚ', 'sys@gmail.com', 'ADMIN');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('sys', 'ï¿½Ã½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½', 'sys@gmail.com', 'ADMIN');
 
 SELECT * FROM users;
 SELECT * FROM users2;
