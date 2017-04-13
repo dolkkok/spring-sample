@@ -746,7 +746,7 @@ public class App {
 //            app.existIndex();
 //            app.deleteIndex();
 
-/*
+
             app.insertDocument("1", "Tomas", "10", "Hello Tomas 2017",
                     Arrays.asList("mbc", "sbs", "ebs", "kbs"),
                     Arrays.asList(new Comment("Jonh Smith", "2017"), new Comment("Alice White", "2018")));
@@ -764,15 +764,14 @@ public class App {
                     Arrays.asList(new Comment("Mina Jung", "2017"), new Comment("Semi Lee", "2018")));
 
             app.InsertDocumentObject(student);
-            */
-            /*
+
             app.deleteDocument("3");
             app.updateDocument("2", "James Dean", "20", "Hello James 2018");
 
             app.searchAllDocument();
             app.searchAllDocumentWithField();
             app.searchTermQuery();
-            app.searchFilteredQuery();
+            //app.searchFilteredQuery();
             app.searchBoolQuery();
             app.searchBoolQuery();
             app.searchMatchQuery();
@@ -790,10 +789,10 @@ public class App {
             app.searchOrFilter();
             app.searchQueryFilterCache();
             app.searchNestedQuery();
-            app.searchFilteredQuery();
-            */
+            //app.searchFilteredQuery();
 
-            //app.searchFilteredMatchQueryTermFilter();
+
+            app.searchFilteredMatchQueryTermFilter();
             app.searchRegexQuery();
         } catch (final Exception e) {
             e.printStackTrace();

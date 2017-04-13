@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="database">
+    <select id="getSuperAdmin" resultType="String" parameterType="String">
+        SELECT user_name
+        FROM users
+        WHERE user_type=#{user_type}
+        LIMIT 1
+    </select>
+
+    <select id="getAdminUserNameList" resultType="String" parameterType="String">
+        SELECT user_name
+        FROM users
+        WHERE user_type IN (#{one}, #{two})
+    </select>
+
+    <select id="getAllUserNameList" resultType="String">
+        SELECT user_name
+        FROM users
+    </select>
+
+    <resultMap id="user_result" type="com.exbatch.domain.User">
+        <result property="user_id" column="user_id"/>
+        <result property="user_name" column="user_name"/>
+        <result property="user_email" column="user_email"/>
+        <result property="user_type" column="user_type"/>
+    </resultMap>
+
+    <select id="getAllUser" resultMap="user_result">
+        SELECT *
+        FROM users
+    </select>
+
+    <select id="getPagingUserList" parameterType="hashmap" resultMap="user_result">
+        SELECT *
+        FROM users
+        LIMIT #{offset}, #{noOfRecords}
+    </select>
+
+    <select id="updateAdminName" parameterType="String">
+        UPDATE users
+        SET user_name = #{newAdminName}
+        WHERE user_name = #{findAdminName}
+    </select>
+
+    <select id="findAdminEMail" parameterType="com.exbatch.domain.User" resultType="String">
+        SELECT user_email
+        FROM users
+        WHERE user_id = #{user_id}
+        AND user_type = #{user_type}
+    </select>
+
+    <select id="saveAdmin" parameterType="String">
+        INSERT INTO users (user_id, user_name, user_email, user_type)
+        VALUES (#{user_id}, #{user_name}, #{user_email}, #{user_type})
+    </select>
+
+    <insert id="insertBatch2" parameterType="map">
+        INSERT INTO users (user_id, user_name, user_email, user_type)
+        VALUES
+        <foreach item="user" index="index" collection="list" open="" separator="," close="">
+            (#{user.user_id}, #{user.user_name}, #{user.user_email}, #{user.user_type})
+        </foreach>
+    </insert>
+
+    <update id="updateBatch2" parameterType="list">
+        UPDATE users SET user_id = UPPER(user_id) WHERE user_id IN
+        <foreach item="item" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="getBatchOffset" resultType="long" parameterType="String">
+        SELECT batch_offset
+        FROM batch_offset
+        WHERE batch_name = #{batch_name}
+    </select>
+
+    <update id="updateBatchOffset" parameterType="hashmap">
+        UPDATE batch_offset SET batch_offset = #{batch_offset} WHERE batch_name = #{batch_name}
+    </update>
+
+
+</mapper>
