@@ -93,7 +93,7 @@ public class AppConfig {
 		BasicDataSource dataSource = new BasicDataSource();
 
 		dataSource.setDriverClassName("com.mysql.jdbc.Driver");
-		dataSource.setUrl("jdbc:mysql://127.0.0.1:3306/test?useUnicode=yes&amp;characterEncoding=UTF-8");
+		dataSource.setUrl("jdbc:mysql://127.0.0.1:3306/db_tplus?useUnicode=yes&amp;characterEncoding=UTF-8");
 		dataSource.setUsername("root");
 		dataSource.setPassword("");
 
