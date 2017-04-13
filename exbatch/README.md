@@ -36,15 +36,15 @@ CREATE TABLE `users2` (
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB;
 
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('dba', 'DB ������', 'dba@gmail.com', 'ADMIN');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('dba', 'DB 관리자', 'dba@gmail.com', 'ADMIN');
 INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('ebs', 'ebs', 'ebs@google.co.kr', 'GUEST');
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('james', '���ӽ�', 'james@gmail.com', 'GUEST');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('james', '제임스', 'james@gmail.com', 'GUEST');
 INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('KBS', 'kbs', 'kbs@google.co.kr', 'GUEST');
 INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('MBC', 'mbc', 'mbc@google.co.kr', 'GUEST');
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('root', 'root ������', 'root@gmail.com', 'ADMIN');
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('sa', '���� ������', 'sa@gmail.com', 'SA');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('root', 'root 루트 관리자', 'root@gmail.com', 'ADMIN');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('sa', '수퍼 관리자', 'sa@gmail.com', 'SA');
 INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('SBS', 'sbs', 'sbs@google.co.kr', 'GUEST');
-INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('sys', '�ý��� ������', 'sys@gmail.com', 'ADMIN');
+INSERT INTO `users` (`user_id`, `user_name`, `user_email`, `user_type`) VALUES ('sys', '시스템 관리자', 'sys@gmail.com', 'ADMIN');
 
 SELECT * FROM users;
 SELECT * FROM users2;
